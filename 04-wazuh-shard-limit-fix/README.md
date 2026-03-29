@@ -22,11 +22,16 @@ Example error:
 
 ERROR: this action would add [3] total shards,
 but this cluster currently has [1000]/[1000] maximum shards open
+
 ⚡ Quick Fix (Restore Alerts Immediately)
+
 1. Check current shard count
+
 curl -k -u admin:your_password \
 "https://localhost:9200/_cat/shards?h=index,shard,prirep,state" | wc -l
+
 2. Increase shard limit temporarily
+
 curl -k -u admin:your_password -X PUT \
 "https://localhost:9200/_cluster/settings" \
 -H 'Content-Type: application/json' -d'
@@ -35,18 +40,22 @@ curl -k -u admin:your_password -X PUT \
     "cluster.max_shards_per_node": 2000
   }
 }'
+
 3. Verify alerts resume
+
 sudo tail -f /var/log/filebeat/filebeat
 
 Look for:
 
 Published events
 Connection established
+
 🛠️ Permanent Fix: Automate Index Deletion with ISM
 
 This automatically deletes alert indices older than 6 months.
 
 1. Create ISM policy
+
 curl -k -u admin:your_password -X PUT \
 "https://localhost:9200/_plugins/_ism/policies/wazuh" \
 -H 'Content-Type: application/json' -d'
@@ -83,17 +92,23 @@ curl -k -u admin:your_password -X PUT \
     }
   }
 }'
+
 2. Attach policy to existing indices
+
 curl -k -u admin:your_password -X POST \
 "https://localhost:9200/_plugins/_ism/add/wazuh-alerts-*" \
 -H 'Content-Type: application/json' -d'
 {
   "policy_id": "wazuh"
 }'
+
 3. Verify policy is applied
+
 curl -k -u admin:your_password \
 "https://localhost:9200/wazuh-alerts-4.x-2026.03.01/_plugins/_ism/explain"
+
 4. Ensure future indices get the policy (check template)
+
 curl -k -u admin:your_password \
 "https://localhost:9200/_index_template/wazuh-alerts-template?pretty" | grep -A 2 "policy_id"
 
@@ -111,6 +126,7 @@ curl -k -u admin:your_password -X PUT \
   },
   "composed_of": ["wazuh-alerts-mappings"]
 }'
+
 ⏳ Customize Retention Period
 
 Change min_index_age in the policy:
@@ -120,12 +136,18 @@ Retention	Value
 90 days	    "90d"
 180 days	"180d"
 1 year	    "365d"
+
 ✅ Verify Everything is Working
+
 Check total shard count
+
 curl -k -u admin:your_password \
 "https://localhost:9200/_cluster/health?pretty"
+
 Monitor Filebeat in real time
+
 sudo tail -f /var/log/filebeat/filebeat
+
 🤝 Contributing
 
 Open an issue or PR for improvements.
