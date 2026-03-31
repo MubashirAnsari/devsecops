@@ -148,6 +148,18 @@ Monitor Filebeat in real time
 
 sudo tail -f /var/log/filebeat/filebeat
 
+## Note for Archives
+
+If you have archives enabled in Filebeat (`/etc/filebeat/filebeat.yml`), apply the same ISM policy to `wazuh-archives-*` indices:
+
+```bash
+curl -k -u admin:your_password -X POST "https://localhost:9200/_plugins/_ism/add/wazuh-archives-*" -H 'Content-Type: application/json' -d'
+{
+  "policy_id": "wazuh"
+}'
+Also update the index_patterns in the policy to include both patterns:
+"index_patterns": ["wazuh-alerts-*", "wazuh-archives-*"]
+
 🤝 Contributing
 
 Open an issue or PR for improvements.
