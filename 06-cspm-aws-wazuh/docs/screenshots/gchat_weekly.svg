@@ -1,0 +1,63 @@
+<svg width="600" height="500" viewBox="0 0 600 500" xmlns="http://www.w3.org/2000/svg">
+  <rect width="600" height="500" fill="#F1F3F4"/>
+  <rect x="30" y="30" width="540" height="440" rx="12" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="1"/>
+
+  <!-- Header -->
+  <rect x="30" y="30" width="540" height="64" rx="12" fill="#1A1F3C"/>
+  <rect x="30" y="74" width="540" height="20" fill="#1A1F3C"/>
+  <circle cx="64" cy="62" r="18" fill="#2D3A6B"/>
+  <text x="64" y="67" text-anchor="middle" fill="#FFFFFF" font-size="14" font-family="Arial, sans-serif">📊</text>
+  <text x="280" y="55" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="bold" font-family="Arial, sans-serif">Weekly Cloud Security Posture Report</text>
+  <text x="280" y="74" text-anchor="middle" fill="#8B9FD4" font-size="11" font-family="Arial, sans-serif">Production Account  |  Apr 14 - Apr 21, 2026</text>
+
+  <!-- Section 1: Posture -->
+  <rect x="30" y="94" width="540" height="22" fill="#F8F9FA"/>
+  <text x="46" y="109" fill="#374151" font-size="11" font-weight="bold" font-family="Arial, sans-serif">🏆  Security Posture Overview</text>
+
+  <text x="46" y="135" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">OVERALL POSTURE</text>
+  <text x="46" y="152" fill="#15803D" font-size="18" font-weight="bold" font-family="Arial, sans-serif">83% — FAIR</text>
+  <text x="310" y="135" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">CIS BENCHMARK (CIS-6.0)</text>
+  <text x="310" y="152" fill="#2E7D32" font-size="18" font-weight="bold" font-family="Arial, sans-serif">81% — Good</text>
+
+  <text x="46" y="174" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">WEEK OVER WEEK</text>
+  <text x="46" y="190" fill="#B71C1C" font-size="13" font-weight="bold" font-family="Arial, sans-serif">+28 new failures vs last scan</text>
+  <text x="310" y="174" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">CHECKS / RESOURCES</text>
+  <text x="310" y="190" fill="#111827" font-size="13" font-weight="bold" font-family="Arial, sans-serif">231 / 8,031</text>
+
+  <!-- Divider -->
+  <line x1="46" y1="204" x2="554" y2="204" stroke="#F3F4F6" stroke-width="1"/>
+
+  <!-- Section 2: Findings -->
+  <rect x="30" y="204" width="540" height="22" fill="#F8F9FA"/>
+  <text x="46" y="219" fill="#374151" font-size="11" font-weight="bold" font-family="Arial, sans-serif">📋  Findings Breakdown</text>
+
+  <text x="46" y="242" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">PASS</text>
+  <text x="46" y="258" fill="#15803D" font-size="16" font-weight="bold" font-family="Arial, sans-serif">6,583</text>
+  <text x="180" y="242" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">FAIL</text>
+  <text x="180" y="258" fill="#B71C1C" font-size="16" font-weight="bold" font-family="Arial, sans-serif">1,373</text>
+  <text x="310" y="242" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">CRITICAL</text>
+  <text x="310" y="258" fill="#B71C1C" font-size="16" font-weight="bold" font-family="Arial, sans-serif">20</text>
+  <text x="430" y="242" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">HIGH</text>
+  <text x="430" y="258" fill="#E65100" font-size="16" font-weight="bold" font-family="Arial, sans-serif">1,353</text>
+
+  <text x="46" y="280" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">TOP FAILING SERVICES</text>
+  <text x="46" y="295" fill="#374151" font-size="11" font-family="Arial, sans-serif">ECS: 855  |  IAM: 230  |  EC2: 170  |  S3: 80</text>
+
+  <!-- Divider -->
+  <line x1="46" y1="308" x2="554" y2="308" stroke="#F3F4F6" stroke-width="1"/>
+
+  <!-- Section 3: CIS -->
+  <rect x="30" y="308" width="540" height="22" fill="#F8F9FA"/>
+  <text x="46" y="323" fill="#374151" font-size="11" font-weight="bold" font-family="Arial, sans-serif">📌  CIS AWS Benchmark Scores</text>
+
+  <text x="46" y="346" fill="#9CA3AF" font-size="10" font-family="Arial, sans-serif">SCORE BY VERSION</text>
+  <text x="46" y="362" fill="#374151" font-size="11" font-family="Courier New, monospace">CIS-6.0: 81%  ████████░░  (419/517)</text>
+  <text x="46" y="378" fill="#374151" font-size="11" font-family="Courier New, monospace">CIS-5.0: 81%  ████████░░  (419/517)</text>
+  <text x="46" y="394" fill="#374151" font-size="11" font-family="Courier New, monospace">CIS-4.0: 81%  ████████░░  (419/517)</text>
+
+  <!-- Buttons -->
+  <rect x="46" y="418" width="180" height="30" rx="6" fill="#1A1F3C"/>
+  <text x="136" y="437" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="bold" font-family="Arial, sans-serif">📋 Open CPSM-AWS in Notion</text>
+  <rect x="236" y="418" width="120" height="30" rx="6" fill="#F3F4F6" stroke="#E5E7EB" stroke-width="1"/>
+  <text x="296" y="437" text-anchor="middle" fill="#374151" font-size="11" font-family="Arial, sans-serif">🔍 Prowler Docs</text>
+</svg>
