@@ -3,8 +3,6 @@
 > Automated Cloud Security Posture Management using 100% open-source tooling.  
 > Daily misconfiguration detection, CIS benchmark scoring, Notion tracking, and Google Chat alerts — at $0 tooling cost.
 
-![Architecture](docs/screenshots/architecture.png)
-<!-- Screenshot: Full pipeline architecture diagram -->
 
 ---
 
@@ -55,10 +53,6 @@ Weekly posture summary — CIS score + trends
 
 ---
 
-## Architecture
-
-![Pipeline Flow](docs/screenshots/pipeline_flow.png)
-<!-- Screenshot: Step by step flow from scan to alert -->
 
 ### Components
 
@@ -285,10 +279,6 @@ Create a new Notion database called `CPSM-AWS` with these properties:
 
 Share the database with your Notion integration and copy the Database ID from the URL.
 
-![Notion Database](docs/screenshots/notion_database.png)
-<!-- Screenshot: Notion CPSM-AWS database with sample findings -->
-
----
 
 ## Google Chat Setup
 
@@ -300,12 +290,12 @@ Share the database with your Notion integration and copy the Database ID from th
 
 ### Daily alert card
 
-![Google Chat Alert](docs/screenshots/gchat_alert.png)
+![Google Chat Alert](docs/screenshots/gchat_alert.svg)
 <!-- Screenshot: Google Chat Cards v2 critical finding alert -->
 
 ### Weekly summary card
 
-![Weekly Summary](docs/screenshots/gchat_weekly.png)
+![Weekly Summary](docs/screenshots/gchat_weekly.svg)
 <!-- Screenshot: Monday weekly posture report in Google Chat -->
 
 ---
