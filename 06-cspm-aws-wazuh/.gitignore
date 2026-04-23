@@ -1,0 +1,28 @@
+# Credentials — never commit these
+*.credentials
+.env
+secrets.txt
+config/credentials.yaml
+
+# AWS credentials
+.aws/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Prowler output files — can be large
+*.ocsf.json
+*.json.bak
+prowler_previous.json
+
+# Logs
+*.log
+cron.log
+
+# OS
+.DS_Store
+Thumbs.db

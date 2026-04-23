@@ -1,0 +1,44 @@
+<!-- prowler_rules.xml -->
+<!-- Part of: cspm-aws-wazuh pipeline -->
+<!--                                                  -->
+<!-- Deploy to: /var/ossec/etc/rules/prowler_rules.xml -->
+<!-- Then: sudo systemctl restart wazuh-manager        -->
+
+<group name="prowler,cspm,">
+
+  <!-- Base rule: any Prowler FAIL finding -->
+  <!-- Uses built-in json decoder (prowler findings are flattened JSON) -->
+  <rule id="100400" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="prowler_finding">true</field>
+    <field name="status_code">FAIL</field>
+    <description>Prowler CSPM: misconfiguration detected</description>
+    <group>cspm,aws_posture,</group>
+  </rule>
+
+  <!-- Base rule: any Prowler PASS finding (informational) -->
+  <rule id="100401" level="3">
+    <decoded_as>json</decoded_as>
+    <field name="prowler_finding">true</field>
+    <field name="status_code">PASS</field>
+    <description>Prowler CSPM: check passed</description>
+    <group>cspm,aws_posture,</group>
+  </rule>
+
+  <!-- High severity FAIL — level 10 alert in Wazuh -->
+  <rule id="100402" level="10">
+    <if_sid>100400</if_sid>
+    <field name="severity">high|High</field>
+    <description>Prowler HIGH: $(title) [$(region)]</description>
+    <group>cspm,aws_posture,high,</group>
+  </rule>
+
+  <!-- Critical severity FAIL — level 14 alert + triggers integration -->
+  <rule id="100403" level="14">
+    <if_sid>100400</if_sid>
+    <field name="severity">critical|Critical</field>
+    <description>Prowler CRITICAL: $(title) [$(region)]</description>
+    <group>cspm,aws_posture,critical,</group>
+  </rule>
+
+</group>

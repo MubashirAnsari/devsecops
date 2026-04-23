@@ -1,0 +1,31 @@
+<!-- prowler_decoder.xml -->
+<!-- Part of: cspm-aws-wazuh pipeline -->
+<!--                                                  -->
+<!-- Deploy to: /var/ossec/etc/decoders/prowler_decoder.xml -->
+<!-- Then: sudo systemctl restart wazuh-manager              -->
+<!--                                                         -->
+<!-- NOTE: This decoder is OPTIONAL.                         -->
+<!-- Wazuh's built-in json decoder (0006-json_decoders.xml)  -->
+<!-- with prematch "^{\s*\"" already handles Prowler's       -->
+<!-- flattened JSON findings correctly.                      -->
+<!--                                                         -->
+<!-- The prowler_rules.xml uses:                             -->
+<!--   <decoded_as>json</decoded_as>                         -->
+<!--   <field name="prowler_finding">true</field>            -->
+<!-- to fingerprint Prowler events from other JSON logs.     -->
+<!--                                                         -->
+<!-- If you prefer a named custom decoder, deploy this file  -->
+<!-- and update rules to use:                                -->
+<!--   <decoded_as>prowler_fields</decoded_as>               -->
+<!-- instead of <decoded_as>json</decoded_as>                -->
+<!-- However the built-in json decoder approach is simpler   -->
+<!-- and is what this repo uses by default.                  -->
+
+<decoder name="prowler">
+  <prematch>{"prowler_finding":</prematch>
+</decoder>
+
+<decoder name="prowler_fields">
+  <parent>prowler</parent>
+  <plugin_decoder>JSON_Decoder</plugin_decoder>
+</decoder>

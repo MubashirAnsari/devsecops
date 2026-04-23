@@ -1,0 +1,271 @@
+#!/usr/bin/env python3
+"""
+custom-gchat-prowler — Wazuh integration script
+Part of: cspm-aws-wazuh pipeline
+https://github.com/MubashirAnsari/devsecops.git
+
+Deploy to: /var/ossec/integrations/custom-gchat-prowler
+Permissions: chmod 750, chown root:wazuh
+
+Triggered by Wazuh when rule 100403 (Critical) fires.
+Creates a Notion page per finding and sends a Google Chat
+Cards v2 alert with a direct link to the Notion page.
+"""
+
+import sys
+import json
+import urllib.request
+import urllib.error
+import hashlib
+import logging
+from datetime import datetime, timedelta, timezone
+
+# ── Config — edit these ──────────────────────────────────────────
+WEBHOOK_URL    = "YOUR_GOOGLE_CHAT_WEBHOOK_URL"
+NOTION_TOKEN   = "secret_YOUR_NOTION_TOKEN"
+NOTION_DB_ID   = "YOUR_NOTION_DATABASE_ID"
+NOTION_VERSION = "2022-06-28"
+LOG_FILE       = "/var/ossec/logs/integrations.log"
+
+# Alert routing — toggle independently
+NOTION_SEVERITIES = ["critical"]           # sync these to Notion
+GCHAT_SEVERITIES  = ["critical"]           # send these to Google Chat
+# ─────────────────────────────────────────────────────────────────
+
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    format="%(asctime)s [prowler-gchat] %(levelname)s: %(message)s"
+)
+log = logging.getLogger(__name__)
+
+SEVERITY_CONFIG = {
+    "Critical": {"emoji": "🔴", "sla_days": 3,  "label": "CRITICAL"},
+    "High":     {"emoji": "🟠", "sla_days": 14, "label": "HIGH"},
+}
+
+SERVICE_ICONS = {
+    "s3": "S3", "ec2": "EC2", "iam": "IAM", "ecs": "ECS",
+    "vpc": "VPC", "kms": "KMS", "sns": "SNS", "cloudfront": "CF",
+    "cloudwatch": "CW", "cloudtrail": "CT", "codebuild": "CB",
+    "awslambda": "Lambda", "guardduty": "GD", "securityhub": "SH",
+}
+
+def extract_service(event_code):
+    for svc in SERVICE_ICONS:
+        if event_code.startswith(svc):
+            return svc
+    return "etc"
+
+def make_hash(event_code, resource):
+    return hashlib.md5(f"{event_code}:{resource}".encode()).hexdigest()
+
+def now_utc():
+    return datetime.now(timezone.utc)
+
+def sla_date(severity):
+    days = SEVERITY_CONFIG.get(severity, {}).get("sla_days", 14)
+    return (now_utc() + timedelta(days=days)).strftime("%Y-%m-%d")
+
+def http_request(url, payload, method="POST", extra_headers=None):
+    data = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+    if extra_headers:
+        headers.update(extra_headers)
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read()), resp.status
+    except urllib.error.HTTPError as e:
+        log.error(f"HTTP {e.code}: {e.read().decode()[:200]}")
+        return None, e.code
+    except Exception as e:
+        log.error(f"Request failed: {e}")
+        return None, 0
+
+def notion_headers():
+    return {
+        "Authorization": f"Bearer {NOTION_TOKEN}",
+        "Notion-Version": NOTION_VERSION,
+    }
+
+def check_existing_page(finding_hash):
+    url = f"https://api.notion.com/v1/databases/{NOTION_DB_ID}/query"
+    payload = {"filter": {"property": "Finding Hash", "rich_text": {"equals": finding_hash}}}
+    result, _ = http_request(url, payload, extra_headers=notion_headers())
+    if result and result.get("results"):
+        page    = result["results"][0]
+        page_id = page["id"].replace("-", "")
+        return page["id"], f"https://www.notion.so/{page_id}"
+    return None, None
+
+def create_notion_page(data):
+    today    = now_utc().strftime("%Y-%m-%d")
+    svc      = extract_service(data.get("event_code", ""))
+    f_hash   = make_hash(data.get("event_code",""), data.get("resource",""))
+    severity = data.get("severity", "Critical")
+    region   = data.get("region", "us-east-1")
+
+    payload = {
+        "parent": {"database_id": NOTION_DB_ID},
+        "properties": {
+            "Finding Title":     {"title":     [{"text": {"content": data.get("title","N/A")[:200]}}]},
+            "Check ID":          {"rich_text": [{"text": {"content": data.get("event_code","N/A")}}]},
+            "Severity":          {"select":    {"name": severity}},
+            "Status":            {"select":    {"name": "Open"}},
+            "Resource":          {"rich_text": [{"text": {"content": data.get("resource","N/A")[:200]}}]},
+            "Region":            {"rich_text": [{"text": {"content": region}}]},
+            "Account":           {"rich_text": [{"text": {"content": data.get("account","N/A")}}]},
+            "Description":       {"rich_text": [{"text": {"content": data.get("message","N/A")[:500]}}]},
+            "Remediation":       {"rich_text": [{"text": {"content": data.get("remediation","N/A")[:500]}}]},
+            "Service":           {"select":    {"name": svc}},
+            "Finding Hash":      {"rich_text": [{"text": {"content": f_hash}}]},
+            "Scan Date":         {"date":      {"start": today}},
+            "First Seen":        {"date":      {"start": today}},
+            "Last Seen":         {"date":      {"start": today}},
+            "SLA Deadline":      {"date":      {"start": sla_date(severity)}},
+            "Occurrence Count":  {"number":    1},
+            "AWS Console Link":  {"url": f"https://console.aws.amazon.com/console/home?region={region}"},
+            "Prowler Docs Link": {"url": f"https://hub.prowler.com/check/{data.get('event_code','')}"},
+        }
+    }
+    result, status = http_request("https://api.notion.com/v1/pages", payload, extra_headers=notion_headers())
+    if result:
+        page_id = result.get("id","").replace("-","")
+        url = f"https://www.notion.so/{page_id}"
+        log.info(f"Notion page created: {url}")
+        return url
+    log.error(f"Notion page creation failed - HTTP {status}")
+    return ""
+
+def update_notion_last_seen(page_id):
+    today = now_utc().strftime("%Y-%m-%d")
+    http_request(
+        f"https://api.notion.com/v1/pages/{page_id}",
+        {"properties": {"Last Seen": {"date": {"start": today}}}},
+        method="PATCH",
+        extra_headers=notion_headers()
+    )
+    log.info(f"Updated Last Seen for {page_id}")
+
+def send_gchat(data, notion_url, is_new):
+    severity      = data.get("severity", "Critical")
+    cfg           = SEVERITY_CONFIG.get(severity, SEVERITY_CONFIG["Critical"])
+    svc           = extract_service(data.get("event_code",""))
+    svc_label     = SERVICE_ICONS.get(svc, "☁️")
+    event_code    = data.get("event_code","N/A")
+    title         = data.get("title","N/A")
+    message       = data.get("message","N/A")
+    resource      = data.get("resource","N/A")
+    region        = data.get("region","N/A")
+    account       = data.get("account","N/A")
+    sla           = sla_date(severity)
+    scan_time     = now_utc().strftime("%Y-%m-%d %H:%M UTC")
+    status_tag    = "🆕 NEW FINDING" if is_new else "🔁 STILL OPEN"
+
+    # Shorten long resource ARNs for display
+    resource_display = resource
+    if len(resource) > 60:
+        parts = resource.split(":")
+        resource_display = "...:" + ":".join(parts[-2:]) if len(parts) >= 2 else resource[-60:]
+
+    card = {
+        "cardsV2": [{
+            "cardId": f"prowler-{make_hash(event_code, resource)[:8]}",
+            "card": {
+                "header": {
+                    "title": f"{cfg['emoji']} {cfg['label']} Security Finding",
+                    "subtitle": f"{status_tag}  •  {scan_time}",
+                    "imageUrl": "https://raw.githubusercontent.com/prowler-cloud/prowler/master/docs/img/prowler-logo-shadow.png",
+                    "imageType": "CIRCLE"
+                },
+                "sections": [
+                    {
+                        "header": f"{svc_label}  {svc.upper()} — Finding Detail",
+                        "collapsible": False,
+                        "widgets": [
+                            {"decoratedText": {"topLabel": "CHECK",    "text": f"<b>{title}</b>",    "startIcon": {"knownIcon": "BOOKMARK"}}},
+                            {"decoratedText": {"topLabel": "FINDING",  "text": message,              "startIcon": {"knownIcon": "DESCRIPTION"}}},
+                            {"decoratedText": {"topLabel": "CHECK ID", "text": f"<font color=\"#5F6368\"><i>{event_code}</i></font>", "startIcon": {"knownIcon": "TICKET"}}}
+                        ]
+                    },
+                    {
+                        "header": "Affected Resource",
+                        "collapsible": False,
+                        "widgets": [
+                            {"columns": {"columnItems": [
+                                {"horizontalSizeStyle": "FILL_AVAILABLE_SPACE", "widgets": [{"decoratedText": {"topLabel": "RESOURCE", "text": resource_display, "startIcon": {"knownIcon": "CLOUD"}}}]},
+                                {"horizontalSizeStyle": "FILL_AVAILABLE_SPACE", "widgets": [{"decoratedText": {"topLabel": "REGION",   "text": region,           "startIcon": {"knownIcon": "MAP_PIN"}}}]}
+                            ]}},
+                            {"columns": {"columnItems": [
+                                {"horizontalSizeStyle": "FILL_AVAILABLE_SPACE", "widgets": [{"decoratedText": {"topLabel": "ACCOUNT",      "text": account,                                                          "startIcon": {"knownIcon": "PERSON"}}}]},
+                                {"horizontalSizeStyle": "FILL_AVAILABLE_SPACE", "widgets": [{"decoratedText": {"topLabel": "SLA DEADLINE", "text": f"<font color=\"#B71C1C\"><b>{sla}</b></font>", "startIcon": {"knownIcon": "CLOCK"}}}]}
+                            ]}}
+                        ]
+                    },
+                    {
+                        "widgets": [{"buttonList": {"buttons": [
+                            {"text": "View in Notion",  "color": {"red": 0.22, "green": 0.22, "blue": 0.22, "alpha": 1.0}, "onClick": {"openLink": {"url": notion_url}}},
+                            {"text": "Prowler Docs",    "onClick": {"openLink": {"url": f"https://hub.prowler.com/check/{event_code}"}}},
+                            {"text": "AWS Console",     "onClick": {"openLink": {"url": f"https://console.aws.amazon.com/console/home?region={region}"}}}
+                        ]}}]
+                    }
+                ]
+            }
+        }]
+    }
+
+    result, status = http_request(WEBHOOK_URL, card)
+    if status == 200:
+        log.info(f"GChat alert sent: {event_code} / {resource_display}")
+    else:
+        log.error(f"GChat send failed - HTTP {status}")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        log.error("No alert file passed")
+        sys.exit(1)
+
+    try:
+        with open(sys.argv[1]) as f:
+            alert = json.load(f)
+    except Exception as e:
+        log.error(f"Failed to read alert file: {e}")
+        sys.exit(1)
+
+    data       = alert.get("data", {})
+    agent_name = alert.get("agent", {}).get("name", "unknown")
+    severity   = data.get("severity", "").lower()
+
+    # Exit if not a Prowler finding
+    if data.get("prowler_finding") != "true":
+        sys.exit(0)
+
+    # Exit if severity not in routing lists
+    if severity not in NOTION_SEVERITIES and severity not in GCHAT_SEVERITIES:
+        sys.exit(0)
+
+    log.info(f"Processing {severity} finding [{agent_name}]: {data.get('event_code')}")
+
+    notion_url = None
+    is_new     = False
+
+    # Notion sync
+    if severity in NOTION_SEVERITIES:
+        f_hash = make_hash(data.get("event_code",""), data.get("resource",""))
+        existing_id, existing_url = check_existing_page(f_hash)
+
+        if existing_id:
+            update_notion_last_seen(existing_id)
+            notion_url = existing_url
+            is_new = False
+        else:
+            notion_url = create_notion_page(data)
+            is_new = True
+
+    # Google Chat alert
+    if severity in GCHAT_SEVERITIES and notion_url:
+        send_gchat(data, notion_url, is_new)
+    elif severity in GCHAT_SEVERITIES and not notion_url:
+        log.warning(f"GChat skipped - no Notion URL for {data.get('event_code')}")
+
