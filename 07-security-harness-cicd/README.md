@@ -17,33 +17,8 @@ Automated security scanning pipeline deployed across 50+ GitHub repositories. Ev
 ---
 
 ## Architecture
-PR Opened
-↓
-GitHub Actions (self-hosted ARM64 runner)
-↓
-┌─────────────────────────────────────────┐
-│           9 Scan Stages                 │
-│                                         │
-│  🔑 Gitleaks      — secrets detection   │
-│  🔑 TruffleHog    — verified secrets    │
-│  🐍 Bandit        — Python SAST         │
-│  🐍 pip-audit     — Python CVEs         │
-│  📦 npm audit     — JS dependency CVEs  │
-│  🟨 ESLint        — JS/TS SAST          │
-│  📌 Dep pinning   — supply chain risk   │
-│  💎 Brakeman      — Ruby SAST           │
-│  💎 bundler-audit — Ruby CVEs           │
-└─────────────────────────────────────────┘
-↓                    ↓
-PR Comment          Google Chat Alert
-(findings +         (on failure only)
-fix guide)
-↓
-Weekly Notion Report (every Monday)
 
-Severity tiers: Critical / High / Medium / Low / Clean
-Trend tracking: ↑ Worse / ↓ Improved / → Unchanged
-Detailed findings breakdown per repo
+![Security Harness Architecture](docs/architecture.png)
 
 
 ---
