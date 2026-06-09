@@ -142,22 +142,7 @@ Deployed across 51 repositories covering:
 First scan baseline: **865 total findings** across 48 repos, 3 repos clean.
 
 ---
-
-## Files
-07-security-harness-cicd/
-├── README.md
-├── .github/
-│   └── workflows/
-│       └── security-scan.yml      # Main workflow (9 stages)
-├── .eslintrc-security.json        # ESLint security config
-├── reporting/
-│   └── weekly-report.py           # Notion weekly report script
-└── docs/
-└── setup-guide.md             # Detailed setup instructions
-
----
-
 ## Author
 
 **Mubashir** — Sr. DevSecOps Engineer  
-[LinkedIn](https://linkedin.com/in/your-profile) · [GitHub](https://github.com/MubashirAnsari)
+[LinkedIn](https://www.linkedin.com/in/mubashir-ansari-568562166/) · [GitHub](https://github.com/MubashirAnsari)
