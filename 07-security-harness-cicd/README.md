@@ -18,7 +18,7 @@ Automated security scanning pipeline deployed across 50+ GitHub repositories. Ev
 
 ## Architecture
 
-![Security Harness Architecture](docs/architecture.png)
+![Security Harness Architecture](docs/devsecops_architecture_diagram.svg)
 
 
 ---
