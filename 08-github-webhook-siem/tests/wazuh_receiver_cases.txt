@@ -1,0 +1,9 @@
+# expected_rule:level (or none)<TAB>receiver log line
+100716:5	{"result": "rejected", "reason": "ip_not_allowed", "source_ip": "203.0.113.10"}
+100717:10	{"result": "rejected", "reason": "bad_signature", "source_ip": "192.30.252.10"}
+100720:12	{"result": "rejected", "reason": "allowlist_unavailable", "source_ip": "192.30.252.10"}
+100721:7	{"result": "meta_refresh_failed", "error": "timed out"}
+none	{"result": "stored", "event": "push", "repo": "example/app", "delivery": "x"}
+none	{"result": "meta_refreshed", "hook_ranges": 9}
+none	{"result": "accepted", "reason": "ip_not_allowed", "source_ip": "203.0.113.10"}
+none	{"result": "rejected", "reason": "something_else", "source_ip": "203.0.113.10"}

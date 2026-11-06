@@ -1,0 +1,125 @@
+<!--
+  github_webhook_rules.xml - GitHub webhook events (via the aws-s3 SQS subscriber)
+  Events arrive decoded as JSON with the receiver's flat record under data.aws:
+    aws.integration = github-webhook, aws.github.{event, action, repo, sender, ...}
+  Match on fields only, never on free text (text matches under the AWS parent
+  also catch CloudTrail events that mention your resource names).
+  Rule IDs 100700-100715 are examples: change them if they clash with your local rules.
+-->
+<group name="github,github_webhook,">
+
+  <!-- Parent: every GitHub webhook event -->
+  <rule id="100700" level="3">
+    <if_sid>80200</if_sid>
+    <field name="aws.integration">^github-webhook$</field>
+    <description>GitHub: $(aws.github.event) event on $(aws.github.repo) by $(aws.github.sender)</description>
+  </rule>
+
+  <!-- Access changes -->
+  <rule id="100701" level="10">
+    <if_sid>100700</if_sid>
+    <field name="aws.github.event">^member$</field>
+    <description>GitHub: collaborator $(aws.github.member) $(aws.github.action) on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_access,</group>
+  </rule>
+  <rule id="100715" level="12">
+    <if_sid>100701</if_sid>
+    <field name="aws.github.permission_to">^admin$</field>
+    <description>GitHub: collaborator $(aws.github.member) given ADMIN on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_access,</group>
+  </rule>
+
+  <!-- Change control: branch protection and rulesets -->
+  <rule id="100702" level="12">
+    <if_sid>100700</if_sid>
+    <field name="aws.github.event">^branch_protection_rule$</field>
+    <description>GitHub: branch protection rule $(aws.github.rule_name) $(aws.github.action) on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_change_control,</group>
+  </rule>
+  <rule id="100703" level="12">
+    <if_sid>100702</if_sid>
+    <field name="aws.github.action">^deleted$</field>
+    <description>GitHub: branch protection rule $(aws.github.rule_name) DELETED on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_change_control,</group>
+  </rule>
+  <rule id="100704" level="12">
+    <if_sid>100700</if_sid>
+    <field name="aws.github.event">^repository_ruleset$</field>
+    <description>GitHub: ruleset $(aws.github.ruleset_name) $(aws.github.action) on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_change_control,</group>
+  </rule>
+  <rule id="100705" level="12">
+    <if_sid>100704</if_sid>
+    <field name="aws.github.action">^deleted$</field>
+    <description>GitHub: ruleset $(aws.github.ruleset_name) DELETED on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_change_control,</group>
+  </rule>
+
+  <!-- Pushes to the default branch -->
+  <rule id="100706" level="10">
+    <if_sid>100700</if_sid>
+    <field name="aws.github.event">^push$</field>
+    <field name="aws.github.is_default_branch">^true$</field>
+    <field name="aws.github.deleted">^false$</field>
+    <description>GitHub: direct push to default branch $(aws.github.ref) on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_change_control,</group>
+  </rule>
+  <rule id="100707" level="3">
+    <if_sid>100706</if_sid>
+    <field name="aws.github.via_pr_merge">^true$</field>
+    <description>GitHub: PR merged into default branch on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_change_control,</group>
+  </rule>
+  <rule id="100708" level="12">
+    <if_sid>100706</if_sid>
+    <field name="aws.github.forced">^true$</field>
+    <description>GitHub: FORCE push to default branch $(aws.github.ref) on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_change_control,</group>
+  </rule>
+
+  <!-- Deploy keys -->
+  <rule id="100709" level="12">
+    <if_sid>100700</if_sid>
+    <field name="aws.github.event">^deploy_key$</field>
+    <description>GitHub: deploy key $(aws.github.deploy_key_title) $(aws.github.action) on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_access,</group>
+  </rule>
+  <rule id="100710" level="12">
+    <if_sid>100709</if_sid>
+    <field name="aws.github.action">^created$</field>
+    <field name="aws.github.deploy_key_read_only">^false$</field>
+    <description>GitHub: deploy key $(aws.github.deploy_key_title) with WRITE access added on $(aws.github.repo) by $(aws.github.sender)</description>
+    <group>github_access,</group>
+  </rule>
+
+  <!-- Repository exposure and lifecycle -->
+  <rule id="100711" level="13">
+    <if_sid>100700</if_sid>
+    <field name="aws.github.event">^repository$</field>
+    <field name="aws.github.action">^publicized$</field>
+    <description>GitHub: repository $(aws.github.repo) made PUBLIC by $(aws.github.sender)</description>
+    <group>github_exposure,</group>
+  </rule>
+  <rule id="100712" level="13">
+    <if_sid>100700</if_sid>
+    <field name="aws.github.event">^repository$</field>
+    <field name="aws.github.action">^transferred$</field>
+    <description>GitHub: repository $(aws.github.repo) TRANSFERRED by $(aws.github.sender)</description>
+    <group>github_exposure,</group>
+  </rule>
+  <rule id="100713" level="13">
+    <if_sid>100700</if_sid>
+    <field name="aws.github.event">^repository$</field>
+    <field name="aws.github.action">^deleted$</field>
+    <description>GitHub: repository $(aws.github.repo) DELETED by $(aws.github.sender)</description>
+    <group>github_exposure,</group>
+  </rule>
+  <rule id="100714" level="7">
+    <if_sid>100700</if_sid>
+    <field name="aws.github.event">^repository$</field>
+    <field name="aws.github.action">^created$|^renamed$|^archived$|^unarchived$|^privatized$</field>
+    <description>GitHub: repository $(aws.github.repo) $(aws.github.action) by $(aws.github.sender)</description>
+    <group>github_exposure,</group>
+  </rule>
+
+</group>

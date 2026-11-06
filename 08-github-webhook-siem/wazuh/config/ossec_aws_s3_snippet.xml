@@ -1,0 +1,18 @@
+<!--
+  Add inside your EXISTING <wodle name="aws-s3"> block in /var/ossec/etc/ossec.conf
+  (keep your CloudTrail <bucket> block as it is). aws_profile = the read-only
+  IAM user from aws/wazuh-reader-policy.json, configured in /root/.aws (mode 600).
+-->
+<subscriber type="buckets">
+  <sqs_name>YOUR_QUEUE_NAME</sqs_name>
+  <aws_profile>default</aws_profile>
+</subscriber>
+
+<!-- Optional but recommended: pull the receiver's own logs so its failures alert -->
+<service type="cloudwatchlogs">
+  <aws_profile>default</aws_profile>
+  <aws_log_groups>/aws/lambda/YOUR_FUNCTION_NAME</aws_log_groups>
+  <regions>us-east-1</regions>
+  <only_logs_after>2026-JAN-01</only_logs_after>
+  <remove_log_streams>no</remove_log_streams>
+</service>

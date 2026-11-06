@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowS3EventsFromOurBucketOnly",
+      "Effect": "Allow",
+      "Principal": { "Service": "s3.amazonaws.com" },
+      "Action": "sqs:SendMessage",
+      "Resource": "arn:aws:sqs:REGION:ACCOUNT_ID:YOUR_QUEUE_NAME",
+      "Condition": {
+        "ArnEquals": { "aws:SourceArn": "arn:aws:s3:::YOUR_BUCKET" },
+        "StringEquals": { "aws:SourceAccount": "ACCOUNT_ID" }
+      }
+    }
+  ]
+}

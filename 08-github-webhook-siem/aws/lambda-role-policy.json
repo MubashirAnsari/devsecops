@@ -1,0 +1,26 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "WriteEventsOnly",
+      "Effect": "Allow",
+      "Action": "s3:PutObject",
+      "Resource": [
+        "arn:aws:s3:::YOUR_BUCKET/raw/*",
+        "arn:aws:s3:::YOUR_BUCKET/events/*"
+      ]
+    },
+    {
+      "Sid": "ReadWebhookSecret",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:YOUR_SECRET_NAME-*"
+    },
+    {
+      "Sid": "OwnLogsOnly",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:REGION:ACCOUNT_ID:log-group:/aws/lambda/YOUR_FUNCTION_NAME:*"
+    }
+  ]
+}

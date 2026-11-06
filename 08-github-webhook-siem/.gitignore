@@ -1,0 +1,8 @@
+# Never commit credentials or rollout logs from your environment
+.env
+*.credentials
+.aws/
+webhook_rollout_*.tsv
+function.zip
+__pycache__/
+*.pyc
